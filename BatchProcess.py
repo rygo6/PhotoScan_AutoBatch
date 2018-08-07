@@ -6,7 +6,7 @@ import os,re,sys
 
 # get the photo (.JPG) list in specified folder
 def getPhotoList(root_path, photoList):
-	pattern = '.JPG$'
+	pattern = '.jpg$'
 	for root, dirs, files in os.walk(root_path):
 		for name in files:
 			if re.search(pattern,name):
@@ -14,16 +14,18 @@ def getPhotoList(root_path, photoList):
 				#print (cur_path)
 				photoList.append(cur_path)
 			
-def photoscanProcess(root_path):				
+def photoscanProcess(root_path, project_name):				
 	#PhotoScan.app.messageBox('hello world! \n')
 	PhotoScan.app.console.clear()
+
+	PhotoScan.app.gpu_mask = 255
 
 	## construct the document class
 	doc = PhotoScan.app.document
 
 	## save project
 	#doc.open("M:/Photoscan/practise.psx")
-	psxfile = root_path + 'practise.psx'
+	psxfile = root_path + project_name + '.psx'
 	doc.save( psxfile )
 	print ('>> Saved to: ' + psxfile)
 
@@ -64,7 +66,8 @@ def photoscanProcess(root_path):
 	# buildDenseCloud(quality=MediumQuality, filter=AggressiveFiltering[, cameras], keep_depth=False, reuse_depth=False[, progress])
 	# - Dense point cloud quality in [UltraQuality, HighQuality, MediumQuality, LowQuality, LowestQuality]
 	# - Depth filtering mode in [AggressiveFiltering, ModerateFiltering, MildFiltering, NoFiltering]
-	chunk.buildDenseCloud(quality=PhotoScan.LowQuality, filter=PhotoScan.AggressiveFiltering)
+	chunk.buildDepthMaps(quality=PhotoScan.LowQuality, filter=PhotoScan.AggressiveFiltering)
+	chunk.buildDenseCloud()
 
 	################################################################################################
 	### build mesh ###
@@ -103,7 +106,7 @@ def photoscanProcess(root_path):
 	# buildOrthomosaic(surface=ElevationData, blending=MosaicBlending, color_correction=False[, projection ][, region ][, dx ][, dy ][, progress])
 	# - Data source in [PointCloudData, DenseCloudData, ModelData, ElevationData]
 	# - Blending mode in [AverageBlending, MosaicBlending, MinBlending, MaxBlending, DisabledBlending]
-	chunk.buildOrthomosaic(surface=PhotoScan.ModelData, blending=PhotoScan.MosaicBlending, color_correction=True, projection=chunk.crs)
+	chunk.buildOrthomosaic(surface=PhotoScan.ModelData, blending=PhotoScan.MosaicBlending, projection=chunk.crs)
 	
 	################################################################################################
 	## auto classify ground points (optional)
@@ -112,10 +115,13 @@ def photoscanProcess(root_path):
 	
 	################################################################################################
 	doc.save()
+	
+	modelPath = root_path + project_name + ".fbx"
+	chunk.exportModel(path=modelPath,format=PhotoScan.ModelFormatFBX)
 
 # main
-folder = "M:/Photoscan/Photos/"
-photoscanProcess(folder)
+folder = "/home/ubuntu/DJI_Austin02/"
+photoscanProcess(folder,"testmodel")
 
 
 
